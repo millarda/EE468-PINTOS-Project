@@ -62,7 +62,7 @@ process_execute (const char *cmdline)
 static void
 start_process (void *cmdline_)
 {
-  char *cmd_line = cmdline__;
+  char *cmd_line = cmdline_;
   char *cmdline_cp;
   char *file_name;
   char *file_name_ptr;
@@ -77,8 +77,8 @@ start_process (void *cmdline_)
   success = load (cmd_line, &if_.eip, &if_.esp);
 
   /* obtain executable file name */
-  cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
-  strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
+  cmdline_cp = (char *) malloc(strlen(cmd_line) + 1);
+  strlcpy(cmdline_cp, cmd_line, strlen(cmd_line) + 1);
   file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
   /* If load failed, quit. */
@@ -237,6 +237,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   int i;
   char * file_name;
   char * cmdline_cp;
+  char * cmdline_cp_2;
   char * file_name_ptr;
 
   /* Allocate and activate page directory. */
