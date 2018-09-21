@@ -251,6 +251,10 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
   file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
+  printf("load: cmdline_cp: %s\n", cmdline_cp);
+  printf("load: file_name: %s\n", file_name);
+
+
   /* Open executable file. */
   file = filesys_open (file_name);
 
@@ -484,6 +488,8 @@ setup_stack (void **esp, char *cmdline)
   /* parse cmd line */
   cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
+
+  printf("setup_stack: cmdline_cp: %s\n", cmdline_cp);
 
   for (token = strtok_r (cmdline_cp, " ", &save_ptr); token != NULL;
        token = strtok_r (NULL, " ", &save_ptr))
