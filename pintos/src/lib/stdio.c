@@ -595,6 +595,8 @@ hex_dump (uintptr_t ofs, const void *buf_, size_t size, bool ascii)
   const uint8_t *buf = buf_;
   const size_t per_line = 16; /* Maximum bytes per line. */
 
+  printf("In hex dump \n");
+
   while (size > 0)
     {
       size_t start, end, n;
