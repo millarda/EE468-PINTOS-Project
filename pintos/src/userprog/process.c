@@ -31,6 +31,8 @@ process_execute (const char *cmdline)
 {
   char *fn_copy;
   char *file_name;
+  char *cmdline_cp;
+  char *file_name_ptr;
   tid_t tid;
 
   /* Make a copy of FILE_NAME.
@@ -237,13 +239,13 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   /* obtain executable file name */
   cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
-  file_name = strtok_r(file_name, " ", &file_name_ptr);
+  file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
   /* Open executable file. */
   file = filesys_open (file_name);
 
   free(cmdline_cp);
-  
+
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -323,7 +325,10 @@ load (const char *cmdline, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp, cmdline))
+  /* send a copy of cmdline to avoid race conditions since setup stack modifies the array */
+  cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
+  strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
+  if (!setup_stack (esp, cmdline_cp))
     goto done;
 
   /* Start address. */
@@ -334,6 +339,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+  free(cmdline_cp);
   return success;
 }
 
@@ -476,9 +482,9 @@ setup_stack (void **esp, char *cmdline)
   /* allocate enough memory for argv */
   argv = (char **)malloc(argc * sizeof(char*) + 1);
 
-  /* push args onto stack */
+  /* push args onto stack and last time using cmdline so no new copy */
   i = 0;
-  for (token = strtok_r (s, " ", &save_ptr); token != NULL;
+  for (token = strtok_r (cmdline, " ", &save_ptr); token != NULL;
        token = strtok_r (NULL, " ", &save_ptr))
     {
       *esp -= strlen(token) + 1;
@@ -507,7 +513,7 @@ setup_stack (void **esp, char *cmdline)
   /* push argv itself */
   char ** ptr = *esp;
   *esp -= sizeof(char **);
-  memcpy(*esp, &ptr);
+  memcpy(*esp, &ptr, sizeof(char**));
 
   /* push argc */
   *esp -= sizeof(int);
