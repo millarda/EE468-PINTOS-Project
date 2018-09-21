@@ -257,6 +257,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
+      free(cmdline_cp);
       goto done; 
     }
 
@@ -270,6 +271,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
       || ehdr.e_phnum > 1024) 
     {
       printf ("load: %s: error loading executable\n", file_name);
+      free(cmdline_cp);
       goto done; 
     }
 
@@ -348,8 +350,6 @@ load (const char *cmdline, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
-  free(cmdline_cp);
-  free(cmdline_cp_2);
   return success;
 }
 
