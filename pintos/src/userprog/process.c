@@ -527,6 +527,8 @@ setup_stack (void **esp, char *cmdline)
   free(argv);
   free(cmdline_cp);
 
+  hex_dump(0, esp, PHYS_BASE - esp, true);
+
   return success;
 }
 
