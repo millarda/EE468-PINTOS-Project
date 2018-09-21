@@ -60,9 +60,12 @@ process_execute (const char *cmdline)
 /* A thread function that loads a user process and starts it
    running. */
 static void
-start_process (void *file_name_)
+start_process (void *cmdline_)
 {
-  char *file_name = file_name_;
+  char *cmd_line = cmdline__;
+  char *cmdline_cp;
+  char *file_name;
+  char *file_name_ptr;
   struct intr_frame if_;
   bool success;
 
@@ -71,10 +74,16 @@ start_process (void *file_name_)
   if_.gs = if_.fs = if_.es = if_.ds = if_.ss = SEL_UDSEG;
   if_.cs = SEL_UCSEG;
   if_.eflags = FLAG_IF | FLAG_MBS;
-  success = load (file_name, &if_.eip, &if_.esp);
+  success = load (cmd_line, &if_.eip, &if_.esp);
+
+  /* obtain executable file name */
+  cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
+  strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
+  file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
+  free(cmdline_cp);
   if (!success) 
     thread_exit ();
 
@@ -244,8 +253,6 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   /* Open executable file. */
   file = filesys_open (file_name);
 
-  free(cmdline_cp);
-
   if (file == NULL) 
     {
       printf ("load: %s: open failed\n", file_name);
@@ -326,14 +333,13 @@ load (const char *cmdline, void (**eip) (void), void **esp)
 
   /* Set up stack. */
   /* send a copy of cmdline to avoid race conditions since setup stack modifies the array */
-  cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
-  strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
-  if (!setup_stack (esp, cmdline_cp)) {
-    free(cmdline_cp);
+  cmdline_cp_2 = (char *) malloc(strlen(cmdline) + 1);
+  strlcpy(cmdline_cp_2, cmdline, strlen(cmdline) + 1);
+  if (!setup_stack (esp, cmdline_cp_2)) {
     goto done;
   }
   /* Start address. */
-  free(cmdline_cp);
+  free(cmdline_cp_2);
   *eip = (void (*) (void)) ehdr.e_entry;
 
   success = true;
@@ -341,6 +347,8 @@ load (const char *cmdline, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+  free(cmdline_cp);
+  free(cmdline_cp_2);
   return success;
 }
 
