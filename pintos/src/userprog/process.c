@@ -45,7 +45,7 @@ process_execute (const char *cmdline)
   /* obtain executable file name */
   cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
-  file_name = strtok_r(file_name, " ", &file_name_ptr);
+  file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
   /* Create a new thread to execute FILE_NAME. */
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
@@ -328,10 +328,12 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   /* send a copy of cmdline to avoid race conditions since setup stack modifies the array */
   cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
-  if (!setup_stack (esp, cmdline_cp))
+  if (!setup_stack (esp, cmdline_cp)) {
+    free(cmdline_cp);
     goto done;
-
+  }
   /* Start address. */
+  free(cmdline_cp);
   *eip = (void (*) (void)) ehdr.e_entry;
 
   success = true;
@@ -339,7 +341,6 @@ load (const char *cmdline, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
-  free(cmdline_cp);
   return success;
 }
 
@@ -459,7 +460,7 @@ setup_stack (void **esp, char *cmdline)
   uint8_t *kpage;
   bool success = false;
   char *token, *save_ptr, *cmdline_cp, **argv;
-  int argc, i;
+  int argc = 0, i;
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
