@@ -48,6 +48,7 @@ process_execute (const char *cmdline)
   file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
   /* Create a new thread to execute FILE_NAME. */
+  printf("process_execute(): file_name: %s\n", file_name);
   tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
 
   free(file_name);
@@ -80,6 +81,8 @@ start_process (void *cmdline_)
   cmdline_cp = (char *) malloc(strlen(cmd_line) + 1);
   strlcpy(cmdline_cp, cmd_line, strlen(cmd_line) + 1);
   file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
+
+  printf("start_process: file_name: %s\n", file_name);
 
   /* If load failed, quit. */
   palloc_free_page (file_name);
@@ -251,9 +254,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
   file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
-  printf("load: cmdline_cp: %s\n", cmdline_cp);
   printf("load: file_name: %s\n", file_name);
-
 
   /* Open executable file. */
   file = filesys_open (file_name);
@@ -490,6 +491,7 @@ setup_stack (void **esp, char *cmdline)
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
 
   printf("setup_stack: cmdline_cp: %s\n", cmdline_cp);
+  printf("setup_stack: cmdline: %s\n", cmdline);
 
   for (token = strtok_r (cmdline_cp, " ", &save_ptr); token != NULL;
        token = strtok_r (NULL, " ", &save_ptr))
@@ -503,6 +505,7 @@ setup_stack (void **esp, char *cmdline)
   for (token = strtok_r (cmdline, " ", &save_ptr); token != NULL;
        token = strtok_r (NULL, " ", &save_ptr))
     {
+      printf("setup_stack: token %s\n", token);
       *esp -= strlen(token) + 1;
       memcpy(*esp, token, strlen(token) + 1);
       argv[i] = *esp;
