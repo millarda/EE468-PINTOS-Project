@@ -29,7 +29,7 @@ static bool load (const char *cmdline, void (**eip) (void), void **esp);
 tid_t
 process_execute (const char *cmdline)
 {
-  char *fn_copy;
+  char *cmd_copy;
   char *file_name;
   char *cmdline_cp;
   char *file_name_ptr;
@@ -37,10 +37,10 @@ process_execute (const char *cmdline)
 
   /* Make a copy of FILE_NAME.
      Otherwise there's a race between the caller and load(). */
-  fn_copy = palloc_get_page (0);
-  if (fn_copy == NULL)
+  cmd_copy = palloc_get_page (0);
+  if (cmd_copy == NULL)
     return TID_ERROR;
-  strlcpy (fn_copy, cmdline, PGSIZE);
+  strlcpy (cmd_copy, cmdline, PGSIZE);
 
   /* obtain executable file name */
   cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
@@ -49,12 +49,12 @@ process_execute (const char *cmdline)
 
   /* Create a new thread to execute FILE_NAME. */
   printf("process_execute(): file_name: %s\n", file_name);
-  tid = thread_create (file_name, PRI_DEFAULT, start_process, fn_copy);
+  tid = thread_create (file_name, PRI_DEFAULT, start_process, cmd_copy);
 
   free(file_name);
 
   if (tid == TID_ERROR)
-    palloc_free_page (fn_copy); 
+    palloc_free_page (cmd_copy);
   return tid;
 }
 
@@ -64,7 +64,7 @@ static void
 start_process (void *cmdline_)
 {
   char *cmd_line = cmdline_;
-  char *cmdline_cp;
+  //char *cmdline_cp;
   char *file_name;
   char *file_name_ptr;
   struct intr_frame if_;
@@ -78,15 +78,15 @@ start_process (void *cmdline_)
   success = load (cmd_line, &if_.eip, &if_.esp);
 
   /* obtain executable file name */
-  cmdline_cp = (char *) malloc(strlen(cmd_line) + 1);
-  strlcpy(cmdline_cp, cmd_line, strlen(cmd_line) + 1);
-  file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
+  //cmdline_cp = (char *) malloc(strlen(cmd_line) + 1);
+  //strlcpy(cmdline_cp, cmd_line, strlen(cmd_line) + 1);
+  //file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
-  printf("start_process: file_name: %s\n", file_name);
+  //printf("start_process: file_name: %s\n", file_name);
 
   /* If load failed, quit. */
-  palloc_free_page (file_name);
-  free(cmdline_cp);
+  palloc_free_page (cmdline_);
+  //free(cmdline_cp);
   if (!success) 
     thread_exit ();
 
@@ -240,7 +240,6 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   int i;
   char * file_name;
   char * cmdline_cp;
-  char * cmdline_cp_2;
   char * file_name_ptr;
 
   /* Allocate and activate page directory. */
@@ -340,14 +339,10 @@ load (const char *cmdline, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  /* send a copy of cmdline to avoid race conditions since setup stack modifies the array */
-  cmdline_cp_2 = (char *) malloc(strlen(cmdline) + 1);
-  strlcpy(cmdline_cp_2, cmdline, strlen(cmdline) + 1);
-  if (!setup_stack (esp, cmdline_cp_2)) {
+  if (!setup_stack (esp, cmdline)) {
     goto done;
   }
   /* Start address. */
-  free(cmdline_cp_2);
   *eip = (void (*) (void)) ehdr.e_entry;
 
   success = true;
@@ -469,12 +464,16 @@ load_segment (struct file *file, off_t ofs, uint8_t *upage,
 /* Create a minimal stack by mapping a zeroed page at the top of
    user virtual memory. */
 static bool
-setup_stack (void **esp, char *cmdline)
+setup_stack (void **esp, char *bufptr)
 {
   uint8_t *kpage;
   bool success = false;
-  char *token, *save_ptr, *cmdline_cp, **argv;
+  char *token, *save_ptr, *cmdline_cp, **argv, *cmdline;
   int argc = 0, i;
+
+  /* make copy of cmdline info pointed to by bufptr */
+  cmdline = (char *) malloc(strlen(bufptr) + 1);
+  strlcpy(cmdline, bufptr, strlen(bufptr) + 1);
 
   kpage = palloc_get_page (PAL_USER | PAL_ZERO);
   if (kpage != NULL) 
@@ -548,7 +547,7 @@ setup_stack (void **esp, char *cmdline)
   free(argv);
   free(cmdline_cp);
 
-  hex_dump(0, esp, PHYS_BASE - *esp, true);
+  hex_dump(-1 * (PHYS_BASE - *esp), cmdline, PHYS_BASE - *esp, true);
 
   return success;
 }
