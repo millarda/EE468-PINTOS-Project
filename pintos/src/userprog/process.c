@@ -532,7 +532,6 @@ setup_stack (void **esp, char *bufptr)
       memcpy(*esp, &argv[i], sizeof(char*));
     }
 
-  printf("setup_stack: *esp %s\n", (char*)*esp);
   printf("setup_stack: esp %p\n", *esp);
 
   /* push argv itself */
@@ -558,7 +557,7 @@ setup_stack (void **esp, char *bufptr)
   free(argv);
   free(cmdline_cp);
 
-  hex_dump(0, *esp , PHYS_BASE - *esp, true);
+  hex_dump(*esp, *esp , PHYS_BASE - *esp, true);
 
   return success;
 }
