@@ -509,7 +509,7 @@ setup_stack (void **esp, char *cmdline)
       *esp -= strlen(token) + 1;
       memcpy(*esp, token, strlen(token) + 1);
       printf("setup_stack: *esp %s\n", (char*)*esp);
-      printf("setup_stack: esp %p\n", esp);
+      printf("setup_stack: esp %p\n", *esp);
       argv[i] = *esp;
       i++ ;
     }
