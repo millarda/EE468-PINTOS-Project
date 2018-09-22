@@ -48,7 +48,6 @@ process_execute (const char *cmdline)
   file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
   /* Create a new thread to execute FILE_NAME. */
-  printf("process_execute(): file_name: %s\n", file_name);
   tid = thread_create (file_name, PRI_DEFAULT, start_process, cmd_copy);
 
   free(file_name);
@@ -253,14 +252,11 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
   file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
-  printf("load: file_name: %s\n", file_name);
-
   /* Open executable file. */
   file = filesys_open (file_name);
 
   if (file == NULL) 
     {
-      printf ("load: %s: open failed\n", file_name);
       free(cmdline_cp);
       goto done; 
     }
@@ -489,9 +485,6 @@ setup_stack (void **esp, char *bufptr)
   cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
 
-  printf("setup_stack: cmdline_cp: %s\n", cmdline_cp);
-  printf("setup_stack: cmdline: %s\n", cmdline);
-
   for (token = strtok_r (cmdline_cp, " ", &save_ptr); token != NULL;
        token = strtok_r (NULL, " ", &save_ptr))
        argc++;
@@ -504,11 +497,8 @@ setup_stack (void **esp, char *bufptr)
   for (token = strtok_r (cmdline, " ", &save_ptr); token != NULL;
        token = strtok_r (NULL, " ", &save_ptr))
     {
-      printf("setup_stack: token %s\n", token);
       *esp -= strlen(token) + 1;
       memcpy(*esp, token, strlen(token) + 1);
-      printf("setup_stack: *esp %s\n", (char*)*esp);
-      printf("setup_stack: esp %p\n", *esp);
       argv[i] = *esp;
       i++ ;
     }
@@ -524,34 +514,24 @@ setup_stack (void **esp, char *bufptr)
       memcpy(*esp, &argv[argc], i);
     }
 
-  printf("setup_stack: esp %p\n", *esp);
-
   for (i = argc; i >=0; i--)
     {
       *esp -= sizeof(char*);
       memcpy(*esp, &argv[i], sizeof(char*));
     }
 
-  printf("setup_stack: esp %p\n", *esp);
-
   /* push argv itself */
   char ** ptr = *esp;
   *esp -= sizeof(char **);
   memcpy(*esp, &ptr, sizeof(char**));
 
-  printf("setup_stack: esp %p\n", *esp);
-
   /* push argc */
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
 
-  printf("setup_stack: esp %p\n", *esp);
-
   /* push return address (0s)*/
   *esp -= sizeof(void*);
   memcpy(*esp, &argv[argc], sizeof(void*));
-
-  printf("setup_stack: esp %p\n", *esp);
 
   /* free argv and cmdline cp*/
   free(argv);
