@@ -65,8 +65,8 @@ start_process (void *cmdline_)
 {
   char *cmd_line = cmdline_;
   //char *cmdline_cp;
-  char *file_name;
-  char *file_name_ptr;
+  //char *file_name;
+  //char *file_name_ptr;
   struct intr_frame if_;
   bool success;
 
@@ -524,30 +524,41 @@ setup_stack (void **esp, char *bufptr)
       memcpy(*esp, &argv[argc], i);
     }
 
+  printf("setup_stack: esp %p\n", *esp);
+
   for (i = argc; i >=0; i--)
     {
       *esp -= sizeof(char*);
       memcpy(*esp, &argv[i], sizeof(char*));
     }
 
+  printf("setup_stack: *esp %s\n", (char*)*esp);
+  printf("setup_stack: esp %p\n", *esp);
+
   /* push argv itself */
   char ** ptr = *esp;
   *esp -= sizeof(char **);
   memcpy(*esp, &ptr, sizeof(char**));
 
+  printf("setup_stack: esp %p\n", *esp);
+
   /* push argc */
   *esp -= sizeof(int);
   memcpy(*esp, &argc, sizeof(int));
+
+  printf("setup_stack: esp %p\n", *esp);
 
   /* push return address (0s)*/
   *esp -= sizeof(void*);
   memcpy(*esp, &argv[argc], sizeof(void*));
 
+  printf("setup_stack: esp %p\n", *esp);
+
   /* free argv and cmdline cp*/
   free(argv);
   free(cmdline_cp);
 
-  hex_dump(-1 * (PHYS_BASE - *esp), cmdline, PHYS_BASE - *esp, true);
+  hex_dump(0, *esp , PHYS_BASE - *esp, true);
 
   return success;
 }
