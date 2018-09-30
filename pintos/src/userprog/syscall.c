@@ -8,7 +8,7 @@
 #include "userprog/process.h"
 #include "threads/malloc.h"
 #include <string.h>
-#include "synch.h"
+#include "threads/synch.h"
 #include "file.h"
 
 static void syscall_handler (struct intr_frame *);
