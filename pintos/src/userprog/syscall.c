@@ -6,14 +6,21 @@
 #include "threads/vaddr.h"
 #include "userprog/pagedir.h"
 #include "userprog/process.h"
+#include "threads/malloc.h"
+#include <string.h>
+#include "synch.h"
+#include "file.h"
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
 int sys_exec (const char *cmdline);
 
+struct lock filesys_lock;
+
 void 
 syscall_init (void) 
 {
+  lock_init(&filesys_lock);
   intr_register_int (0x30, 3, INTR_ON, syscall_handler, "syscall");
 }
 
@@ -94,7 +101,7 @@ int sys_exec (const char *cmdline){
   struct file * f;
   int return_value;
   // copy command line to parse and obtain filename to open
-  cmdline_cp = malloc (strlen(cmdline)+1);
+  cmdline_cp = malloc(strlen(cmdline)+1);
   strlcpy(cmdline_cp, cmdline, strlen(cmdline)+1);
   file_name = strtok_r(cmdline_cp, " ", &ptr);
 
@@ -103,22 +110,22 @@ int sys_exec (const char *cmdline){
   // your system call implementation must treat the file system code as a critical section
   // Don't forget the process_execute() also accesses files.
   // => Obtain lock for file system
-  acquire_filesys_lock();
+  lock_acquire(&filesys_lock);
 
   // try and open file name
-  f = filesys_open(fn_cp);
+  f = filesys_open(file_name);
 
   // f will be null if file not found in file system
   if (f==NULL){
     // nothing to do here exec fails, release lock and return -1
-    release_filesys_lock();
+    lock_release(&filesys_lock);
     return -1;
   } else {
     // file exists, we can close file and call our implemented process_execute() to run the executable
     // note that process_execute accesses filesystem so hold onto lock until it is complete
     file_close(f);
     return_value = process_execute(cmdline);
-    release_filesys_lock();
+    lock_release(&filesys_lock);
     return return_value;
   }
 }
