@@ -10,6 +10,7 @@
 #include <string.h>
 #include "threads/synch.h"
 #include "filesys/file.h"
+#include "filesys/filesys.h"
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
@@ -75,11 +76,11 @@ syscall_handler (struct intr_frame *f)
 
       // Validate the buffer that the first argument is pointing to, this is a pointer to the command line args
       // that include the filename and additional arguments for process execute
-      if(!is_valid_ptr(*(stack + 1)))
+      if(!is_valid_ptr((void *)*(stack + 1)))
         sys_exit(-1);
 
       // pointers are valid, call sys_exec and save result to eax for the interrupt frame
-      f->eax = sys_exec(*(stack + 1));
+      f->eax = sys_exec((const char *)*(stack + 1));
       break;
     }
       
