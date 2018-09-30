@@ -5,9 +5,11 @@
 #include "threads/thread.h"
 #include "threads/vaddr.h"
 #include "userprog/pagedir.h"
+#incldue "userprog/process.h"
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
+int sys_exec (const char *cmdline);
 
 void 
 syscall_init (void) 
@@ -27,9 +29,11 @@ static void
 syscall_handler (struct intr_frame *f)
 {
   int syscall_number;
+  int * stack = f->esp;
   ASSERT( sizeof(syscall_number) == 4 ); // assuming x86
 
   // The system call number is in the 32-bit word at the caller's stack pointer.
+  // the stack organization can be seen in lib/user/syscall.c
   memread_user(f->esp, &syscall_number, sizeof(syscall_number));
   _DEBUG_PRINTF ("[DEBUG] system call, number = %d!\n", syscall_number);
 
@@ -56,7 +60,21 @@ syscall_handler (struct intr_frame *f)
       NOT_REACHED();
       break;
     }
-#endif
+  case SYS_EXEC:
+    {
+      // Validate the pointer to the first argument on the stack
+      if(!is_valid_ptr(stack + 1))
+        sys_exit(-1);
+
+      // Validate the buffer that the first argument is pointing to, this is a pointer to the command line args
+      // that include the filename and additional arguments for process execute
+      if(!is_valid_ptr(*(stack + 1)))
+        sys_exit(-1);
+
+      // pointers are valid, call sys_exec and save result to eax for the interrupt frame
+      f->eax = sys_exec(*(stack + 1));
+      break;
+    }
       
   /* unhandled case */
   default:
@@ -68,7 +86,44 @@ syscall_handler (struct intr_frame *f)
   }
 }
 
-oid sys_halt(void) {
+
+int sys_exec (const char *cmdline){
+  char * cmdline_cp;
+  char * ptr;
+  char * file_name;
+  struct file * f;
+  int return_value;
+  // copy command line to parse and obtain filename to open
+  cmdline_cp = malloc (strlen(cmdline)+1);
+  strlcpy(cmdline_cp, cmdline, strlen(cmdline)+1);
+  file_name = strtok_r(cmdline_cp, " ", &ptr);
+
+
+  // it is not safe to call into the file system code provided in "filesys" directory from multiple threads at once
+  // your system call implementation must treat the file system code as a critical section
+  // Don't forget the process_execute() also accesses files.
+  // => Obtain lock for file system
+  acquire_filesys_lock();
+
+  // try and open file name
+  f = filesys_open(fn_cp);
+
+  // f will be null if file not found in file system
+  if (f==NULL){
+    // nothing to do here exec fails, release lock and return -1
+    release_filesys_lock();
+    return -1;
+  } else {
+    // file exists, we can close file and call our implemented process_execute() to run the executable
+    // note that process_execute accesses filesystem so hold onto lock until it is complete
+    file_close(f);
+    return_value = process_execute(cmdline);
+    release_filesys_lock();
+    return return_value;
+  }
+}
+
+void sys_halt(void) {
   shutdown_power_off();
 }
 
@@ -99,7 +154,7 @@ bool
 is_valid_ptr(const void *user_ptr)
 {
   struct thread *curr = thread_current();
-  if(user_ptr != NULL && is_user_vaddr (user_ptr))
+  if(user_ptr != NULL && is_user_vaddr(user_ptr))
   {
     return (pagedir_get_page(curr->pagedir, user_ptr)) != NULL;
   }
