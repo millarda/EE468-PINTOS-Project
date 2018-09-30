@@ -9,7 +9,7 @@
 #include "threads/malloc.h"
 #include <string.h>
 #include "threads/synch.h"
-#include "file.h"
+#include "filesys/file.h"
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
