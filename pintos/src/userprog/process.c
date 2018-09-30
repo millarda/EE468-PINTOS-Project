@@ -247,6 +247,10 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
   file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
+  // make another copy of cmdline just in case setup_stack wants to modify it
+  cmdline_cp_2 = (char *) malloc(strlen(cmdline) + 1);
+  strlcpy(cmdline_cp_2, cmdline, strlen(cmdline) + 1);
+
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL) 
@@ -335,9 +339,6 @@ load (const char *cmdline, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  // make another copy of cmdline just in case setup_stack wants to modify it
-  cmdline_cp_2 = (char *) malloc(strlen(cmdline) + 1);
-  strlcpy(cmdline_cp_2, cmdline, strlen(cmdline) + 1);
   if (!setup_stack (esp, cmdline_cp_2)) {
     goto done;
   }
