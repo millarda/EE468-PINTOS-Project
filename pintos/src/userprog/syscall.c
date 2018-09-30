@@ -50,17 +50,16 @@ syscall_handler (struct intr_frame *f)
   // refer to exception.c:page_fault() (see manual 4.3.3)
   thread_current()->current_esp = f->esp;
 
-  // Dispatch w.r.t system call number
-  // SYS_*** constants are defined in syscall-nr.h
+  // Dispatch w.r.t system call numbers defined in syscall-nr.h
   switch (syscall_number) {
-  case SYS_HALT: // 0
+  case SYS_HALT:
     {
       sys_halt();
       NOT_REACHED();
       break;
     }
 
-  case SYS_EXIT: // 1
+  case SYS_EXIT:
     {
       int exitcode;
       memread_user(f->esp + 4, &exitcode, sizeof(exitcode));
