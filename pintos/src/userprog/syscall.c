@@ -11,6 +11,7 @@
 #include "threads/synch.h"
 #include "filesys/file.h"
 #include "filesys/filesys.h"
+#include "shutdown.h"
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
