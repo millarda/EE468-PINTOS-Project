@@ -15,7 +15,6 @@
 #include "threads/vaddr.h"
 #include "threads/synch.h"
 #include "lib/kernel/list.h"
-#include "vm/page.h"
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
@@ -74,8 +73,7 @@ syscall_handler (struct intr_frame *f)
     {
       pid_t pid;
       memread_user(f->esp + 4, &pid, sizeof(pid_t));
-
-      int ret = sys_wait(pid);
+      int ret = process_wait(pid);
       f->eax = (uint32_t) ret;
       break;
     }
@@ -125,7 +123,7 @@ syscall_handler (struct intr_frame *f)
       memread_user(f->esp + 8, &buffer, sizeof(buffer));
       memread_user(f->esp + 12, &size, sizeof(size));
       ret = sys_write(fd, buffer, size);
-      
+
       f->eax = (uint32_t) ret;
       break;
     }
@@ -189,9 +187,7 @@ int sys_write(int fd, const void *buffer, unsigned size) {
     struct file_desc* fd_buf = find_file_desc(thread_current(), fd, FD_FILE);
 
     if(fd_buf && fd_buf->file) {
-      prep_pages(buffer, size);
       return_value = file_write(fd_buf->file, buffer, size);
-      unprep_pages(buffer, size);
     }
     else // no such file or can't open
       return_value = -1;
@@ -201,30 +197,7 @@ int sys_write(int fd, const void *buffer, unsigned size) {
   return ret;
 }
 
-void prep_pages(const void *buffer, size_t size)
-{
-  struct supplemental_page_table *supt = thread_current()->supt;
 
-  uint32_t *pagedir = thread_current()->pagedir;
-
-  void *upage;
-  for(upage = pg_round_down(buffer); upage < buffer + size; upage += PGSIZE)
-  {
-    vm_load_page (supt, pagedir, upage);
-    vm_pin_page (supt, upage);
-  }
-}
-
-void unprep_pages(const void *buffer, size_t size)
-{
-  struct supplemental_page_table *supt = thread_current()->supt;
-
-  void *upage;
-  for(upage = pg_round_down(buffer); upage < buffer + size; upage += PGSIZE)
-  {
-    vm_unpin_page (supt, upage);
-  }
-}
 
 static void
 check_user (const uint8_t *uaddr) {
