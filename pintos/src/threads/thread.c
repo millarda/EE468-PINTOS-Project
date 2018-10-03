@@ -71,9 +71,6 @@ static void schedule (void);
 void thread_schedule_tail (struct thread *prev);
 static tid_t allocate_tid (void);
 
-struct thread * thread_current (void);
-struct thread * running_thread (void);
-
 /* Initializes the threading system by transforming the code
    that's currently running into a thread.  This can't work in
    general and it is possible in this case only because loader.S
@@ -274,39 +271,6 @@ const char *
 thread_name (void)
 {
   return thread_current ()->name;
-}
-
-/* Returns the running thread.
-   This is running_thread() plus a couple of sanity checks.
-   See the big comment at the top of thread.h for details. */
-struct thread *
-thread_current (void)
-{
-  struct thread *t = running_thread ();
-
-  /* Make sure T is really a thread.
-     If either of these assertions fire, then your thread may
-     have overflowed its stack.  Each thread has less than 4 kB
-     of stack, so a few big automatic arrays or moderate
-     recursion can cause stack overflow. */
-  ASSERT (is_thread (t));
-  ASSERT (t->status == THREAD_RUNNING);
-
-  return t;
-}
-
-/* Returns the running thread. */
-struct thread *
-running_thread (void)
-{
-  uint32_t *esp;
-
-  /* Copy the CPU's stack pointer into `esp', and then round that
-     down to the start of a page.  Because `struct thread' is
-     always at the beginning of a page and the stack pointer is
-     somewhere in the middle, this locates the curent thread. */
-  asm ("mov %%esp, %0" : "=g" (esp));
-  return pg_round_down (esp);
 }
 
 /* Returns the running thread's tid. */
