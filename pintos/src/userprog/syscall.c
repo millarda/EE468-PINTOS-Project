@@ -15,7 +15,7 @@
 #include "threads/vaddr.h"
 #include "threads/synch.h"
 #include "lib/kernel/list.h"
-#include "sys/types.h"
+#include <sys/types.h>
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
