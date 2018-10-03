@@ -11,7 +11,7 @@ void process_activate (void);
 /* PCB : see initialization at process_execute(). */
 struct process_control_block {
 
-  pid_t pid;                /* The pid of process */
+  int pid;                /* The pid of process */ //change to pid_t
 
   const char* cmdline;      /* The command line of this process being executed */
 
