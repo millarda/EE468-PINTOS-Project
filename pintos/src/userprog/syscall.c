@@ -27,6 +27,9 @@ static void check_user (const uint8_t *uaddr);
 static int32_t get_user (const uint8_t *uaddr);
 bool is_valid_ptr(const void *user_ptr);
 
+static int memread_user (void *src, void *dst, size_t bytes);
+enum fd_search_filter { FD_FILE = 1, FD_DIRECTORY = 2 };
+
 struct lock filesys_lock;
 
 void
@@ -260,4 +263,19 @@ get_user (const uint8_t *uaddr) {
   asm ("movl $1f, %0; movzbl %1, %0; 1:"
       : "=&a" (result) : "m" (*uaddr));
   return result;
+}
+
+static int
+memread_user (void *src, void *dst, size_t bytes)
+{
+  int32_t value;
+  size_t i;
+  for(i=0; i<bytes; i++) {
+    value = get_user(src + i);
+    if(value == -1) // segfault or invalid memory access
+      fail_invalid_access();
+
+    *(char*)(dst + i) = value & 0xff;
+  }
+  return (int)bytes;
 }
