@@ -22,13 +22,13 @@ static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
 int sys_write(int fd, const void *buffer, unsigned size);
 
-static struct file_desc* find_file_desc(struct thread *, int fd, enum fd_search_filter flag);
 static void check_user (const uint8_t *uaddr);
 static int32_t get_user (const uint8_t *uaddr);
 bool is_valid_ptr(const void *user_ptr);
 
 static int memread_user (void *src, void *dst, size_t bytes);
 enum fd_search_filter { FD_FILE = 1, FD_DIRECTORY = 2 };
+static struct file_desc* find_file_desc(struct thread *, int fd, enum fd_search_filter flag);
 
 struct lock filesys_lock;
 
