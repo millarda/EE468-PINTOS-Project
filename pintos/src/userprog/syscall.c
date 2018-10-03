@@ -16,7 +16,6 @@
 #include "threads/synch.h"
 #include "lib/kernel/list.h"
 //#include <sys/types.h>
-#include "locking.h"
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
@@ -78,8 +77,9 @@ syscall_handler (struct intr_frame *f)
 
   case SYS_WAIT:
     {
-      pid_t pid;
-      memread_user(f->esp + 4, &pid, sizeof(pid_t));
+      //pid_t pid;
+      int pid;
+      memread_user(f->esp + 4, &pid, sizeof(int));//if pid_t gets working, change int to pid_t
       int ret = process_wait(pid);
       f->eax = (uint32_t) ret;
       break;
