@@ -54,7 +54,6 @@ syscall_handler (struct intr_frame *f)
 
   // The system call number is in the 32-bit word at the caller's stack pointer.
   memread_user(f->esp, &syscall_number, sizeof(syscall_number));
-  _DEBUG_PRINTF ("[DEBUG] system call, number = %d!\n", syscall_number);
 
   // Store the esp, which is needed in the page fault handler.
   // refer to exception.c:page_fault() (see manual 4.3.3)
