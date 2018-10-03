@@ -24,6 +24,7 @@ int sys_write(int fd, const void *buffer, unsigned size);
 
 static struct file_desc* find_file_desc(struct thread *, int fd, enum fd_search_filter flag);
 static void check_user (const uint8_t *uaddr);
+static int32_t get_user (const uint8_t *uaddr);
 bool is_valid_ptr(const void *user_ptr);
 
 struct lock filesys_lock;
@@ -245,4 +246,18 @@ find_file_desc(struct thread *t, int fd, enum fd_search_filter flag)
   }
 
   return NULL; // not found
+}
+
+static int32_t
+get_user (const uint8_t *uaddr) {
+  // check that a user pointer `uaddr` points below PHYS_BASE
+  if (! ((void*)uaddr < PHYS_BASE)) {
+    return -1;
+  }
+
+  // as suggested in the reference manual, see (3.1.5)
+  int result;
+  asm ("movl $1f, %0; movzbl %1, %0; 1:"
+      : "=&a" (result) : "m" (*uaddr));
+  return result;
 }
