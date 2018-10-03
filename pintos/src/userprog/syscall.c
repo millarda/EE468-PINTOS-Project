@@ -15,11 +15,17 @@
 #include "threads/vaddr.h"
 #include "threads/synch.h"
 #include "lib/kernel/list.h"
+#include "sys/types.h"
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
-void prep_pages(const void *buffer, size_t size);
-void unprep_pages(const void *buffer, size_t size);
+int sys_write(int fd, const void *buffer, unsigned size);
+
+static struct file_desc* find_file_desc(struct thread *, int fd, enum fd_search_filter flag);
+static void check_user (const uint8_t *uaddr);
+bool is_valid_ptr(const void *user_ptr);
+
+struct lock filesys_lock;
 
 void
 syscall_init (void)
@@ -85,7 +91,6 @@ syscall_handler (struct intr_frame *f)
 
       memread_user(f->esp + 4, &fd, sizeof(fd));
 
-      return_code = sys_tell(fd);
       lock_acquire (&filesys_lock);
       struct file_desc* file_d = find_file_desc(thread_current(), fd, FD_FILE);
 
@@ -107,7 +112,7 @@ syscall_handler (struct intr_frame *f)
       memread_user(f->esp + 4, &filename, sizeof(filename));
       check_user((const uint8_t*) filename);
       lock_acquire (&filesys_lock);
-      ret_code = filesys_remove(filename);
+      ret = filesys_remove(filename);
       lock_release (&filesys_lock);
 
       f->eax = ret;
@@ -138,7 +143,7 @@ syscall_handler (struct intr_frame *f)
   }
 }
 
-oid sys_halt(void) {
+void sys_halt(void) {
   shutdown_power_off();
 }
 
@@ -160,7 +165,12 @@ void sys_exit(int status) {
 }
 
 
-//Checks if a ptr is null, to unmapped virtual memory or to the kernel
+/* The kernel must be very careful about doing so, because the user can pass
+ * a null pointer, a pointer to unmapped virtual memory, or a pointer to
+ * kernel virtual address space (above PHYS_BASE). All of these types of
+ * invalid pointers must be rejected without harm to the kernel or other
+ * running processes, by terminating the offending process and freeing its
+ * resources */
 bool is_valid_ptr(const void *user_ptr)
 {
   struct thread *curr = thread_current();
@@ -176,21 +186,21 @@ int sys_write(int fd, const void *buffer, unsigned size) {
   check_user((const uint8_t*) buffer + size - 1);
 
   lock_acquire (&filesys_lock);
-  int return_value;
+  int ret;
 
   if(fd == 1) { // for stdout
     putbuf(buffer, size);
-    return_value = size;
+    ret = size;
   }
   else {
     // for file
     struct file_desc* fd_buf = find_file_desc(thread_current(), fd, FD_FILE);
 
     if(fd_buf && fd_buf->file) {
-      return_value = file_write(fd_buf->file, buffer, size);
+      ret = file_write(fd_buf->file, buffer, size);
     }
     else // no such file or can't open
-      return_value = -1;
+      ret = -1;
   }
 
   lock_release (&filesys_lock);
@@ -204,4 +214,33 @@ check_user (const uint8_t *uaddr) {
 
   if(get_user (uaddr) == -1)
     fail_invalid_access();
+}
+
+static struct file_desc*
+find_file_desc(struct thread *t, int fd, enum fd_search_filter flag)
+{
+  ASSERT (t != NULL);
+
+  if (fd < 3) {
+    return NULL;
+  }
+
+  struct list_elem *e;
+
+  if (! list_empty(&t->file_descriptors)) {
+    for(e = list_begin(&t->file_descriptors);
+        e != list_end(&t->file_descriptors); e = list_next(e))
+    {
+      struct file_desc *desc = list_entry(e, struct file_desc, elem);
+      if(desc->id == fd) {
+        // found. filter by flag to distinguish file and directorys
+        if (desc->dir != NULL && (flag & FD_DIRECTORY) )
+          return desc;
+        else if (desc->dir == NULL && (flag & FD_FILE) )
+          return desc;
+      }
+    }
+  }
+
+  return NULL; // not found
 }
