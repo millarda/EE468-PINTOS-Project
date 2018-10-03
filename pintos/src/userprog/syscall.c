@@ -72,21 +72,61 @@ syscall_handler (struct intr_frame *f)
 
   case SYS_WAIT:
     {
-      while(1);
+      pid_t pid;
+      memread_user(f->esp + 4, &pid, sizeof(pid_t));
+
+      int ret = sys_wait(pid);
+      f->eax = (uint32_t) ret;
+      break;
     }
 
+  case SYS_TELL:
+    {
+      int fd;
+      unsigned ret;
+
+      memread_user(f->esp + 4, &fd, sizeof(fd));
+
+      return_code = sys_tell(fd);
+      lock_acquire (&filesys_lock);
+      struct file_desc* file_d = find_file_desc(thread_current(), fd, FD_FILE);
+
+      if(file_d && file_d->file) {
+        ret = file_tell(file_d->file);
+      }
+      else
+        ret = -1;
+
+      lock_release (&filesys_lock);
+      f->eax = (uint32_t) ret;
+      break;
+    }
+  case SYS_REMOVE:
+    {
+      const char* filename;
+      bool ret;
+
+      memread_user(f->esp + 4, &filename, sizeof(filename));
+      check_user((const uint8_t*) filename);
+      lock_acquire (&filesys_lock);
+      ret_code = filesys_remove(filename);
+      lock_release (&filesys_lock);
+
+      f->eax = ret;
+      break;
+    }
   case SYS_WRITE:
     {
-      int fd, return_code;
+      int fd, ret;
       const void *buffer;
       unsigned size;
 
       memread_user(f->esp + 4, &fd, sizeof(fd));
       memread_user(f->esp + 8, &buffer, sizeof(buffer));
       memread_user(f->esp + 12, &size, sizeof(size));
-
-      return_code = sys_write(fd, buffer, size);
-      f->eax = (uint32_t) return_code;
+      ret = sys_write(fd, buffer, size);
+      
+      f->eax = (uint32_t) ret;
       break;
     }
 
@@ -121,14 +161,9 @@ void sys_exit(int status) {
   thread_exit();
 }
 
-/* The kernel must be very careful about doing so, because the user can pass
- * a null pointer, a pointer to unmapped virtual memory, or a pointer to
- * kernel virtual address space (above PHYS_BASE). All of these types of
- * invalid pointers must be rejected without harm to the kernel or other
- * running processes, by terminating the offending process and freeing its
- * resources */
-bool
-is_valid_ptr(const void *user_ptr)
+
+//Checks if a ptr is null, to unmapped virtual memory or to the kernel
+bool is_valid_ptr(const void *user_ptr)
 {
   struct thread *curr = thread_current();
   if(user_ptr != NULL && is_user_vaddr (user_ptr))
