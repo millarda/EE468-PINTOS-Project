@@ -16,7 +16,7 @@
 #include "threads/synch.h"
 #include "lib/kernel/list.h"
 //#include <sys/types.h>
-#include <sys/locking.h>
+#include "locking.h"
 
 static void syscall_handler (struct intr_frame *);
 void sys_exit (int);
