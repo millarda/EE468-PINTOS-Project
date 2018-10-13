@@ -148,14 +148,21 @@ syscall_handler (struct intr_frame *f)
       printf("WRITE: starting syswrite with esp = %d\n", *esp);
       if(is_valid_ptr((const void*)(esp+1)) && is_valid_ptr( (const void*) (esp+2)) && is_valid_ptr((const void*)(esp+3)))
       {
-        if(is_valid_ptr((const void*)(*(esp+2))) && is_valid_ptr((const void*)(*(esp+2+(*esp+3)-1))))
+        printf("WRITE: size = %d\n", *(esp+3));
+        if(is_valid_ptr((const void*)(*(esp+2))) && is_valid_ptr((const void*)(*(esp+2+*(esp+3)-1))))
           f->eax = (uint32_t) sys_write((int) *(esp+1), (const void*) *(esp+2), (unsigned) *(esp+3));
         else{
-          printf("WRITE: Pointer found as invalid 1\n");
+          if(!is_valid_ptr((const void*)(*(esp+2)))){
+            printf("WRITE: *(esp+2) invalid \n");
+          }
+          if(!is_valid_ptr((const void*)(*(esp+2+*(esp+3)-1)))){
+            printf("WRITE: (*(esp+2+*(esp+3)-1)) invalid \n");
+          }
+          printf("WRITE: Pointer found as invalid 2\n");
           sys_exit(-1);
         }
       }else{
-        printf("WRITE: Pointer found as invalid 2\n");
+        printf("WRITE: Pointer found as invalid 1\n");
         sys_exit(-1);
       }
       break;
