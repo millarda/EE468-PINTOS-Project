@@ -63,7 +63,7 @@ static void
 syscall_handler (struct intr_frame *f)
 {
   uint32_t *esp;
-  printf("SYSCALL: Entered syscall\n", );
+  printf("SYSCALL: Entered syscall\n");
   //int syscall_number;
   //ASSERT( sizeof(syscall_number) == 4 ); // assuming x86
 
