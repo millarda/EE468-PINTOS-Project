@@ -538,6 +538,8 @@ setup_stack (void **esp, char *bufptr)
   free(argv);
   free(cmdline_cp);
 
+  printf("we made it\n");
+
   hex_dump(*esp, *esp , PHYS_BASE - *esp, true);
 
   return success;
