@@ -63,8 +63,8 @@ static void
 syscall_handler (struct intr_frame *f)
 {
   uint32_t *esp;
-  int syscall_number;
-  ASSERT( sizeof(syscall_number) == 4 ); // assuming x86
+  //int syscall_number;
+  //ASSERT( sizeof(syscall_number) == 4 ); // assuming x86
 
   // The system call number is in the 32-bit word at the caller's stack pointer.
   //memread_user(f->esp, &syscall_number, sizeof(syscall_number));
@@ -157,7 +157,7 @@ syscall_handler (struct intr_frame *f)
 
   /* unhandled case */
   default:
-    printf("[ERROR] system call %d is unimplemented!\n", syscall_number);
+    printf("[ERROR] a system call is unimplemented!\n");
 
     // ensure that waiting (parent) process should wake up and terminate.
     sys_exit(-1);
