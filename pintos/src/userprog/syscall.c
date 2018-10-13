@@ -74,7 +74,7 @@ syscall_handler (struct intr_frame *f)
   //thread_current()->current_esp = f->esp;
   esp = f->esp;
   if(is_valid_ptr(esp)){
-    exit(-1);
+    sys_exit(-1);
   }
   // Dispatch w.r.t system call number
   // SYS_*** constants are defined in syscall-nr.h
@@ -147,10 +147,10 @@ syscall_handler (struct intr_frame *f)
         if(is_valid_ptr((const void*)(*(esp+2))) && is_valid_ptr((const void*)(*(esp+2+(*esp+3)-1))))
           f->eax = (uint32_t) sys_write((int) *(esp+1), (const void*) *(esp+2), (unsigned) *(esp+3));
         else{
-          exit(-1);
+          sys_exit(-1);
         }
       }else{
-        exit(-1);
+        sys_exit(-1);
       }
       break;
     }
@@ -171,7 +171,7 @@ syscall_handler (struct intr_frame *f)
 
 void sys_exit(int status) {
   printf("%s: exit(%d)\n", thread_current()->name, status);
-
+  
   // The process exits.
   // wake up the parent process (if it was sleeping) using semaphore,
   // and pass the return code.
