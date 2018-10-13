@@ -74,6 +74,7 @@ syscall_handler (struct intr_frame *f)
   // refer to exception.c:page_fault() (see manual 4.3.3)
   //thread_current()->current_esp = f->esp;
   esp = f->esp;
+  printf("SYSCALL: esp is %d\n", *esp);
   if(is_valid_ptr(esp)){
     sys_exit(-1);
   }
