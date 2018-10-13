@@ -240,18 +240,23 @@ load (const char *cmdline, void (**eip) (void), void **esp)
   int i;
   char * file_name;
   char * cmdline_cp;
+  char * cmdline_cp_2;
   char * file_name_ptr;
+
+  /* obtain executable file name */
+  cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
+  strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
+  file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
+
+  // make another copy of cmdline just in case setup_stack wants to modify it
+  cmdline_cp_2 = (char *) malloc(strlen(cmdline) + 1);
+  strlcpy(cmdline_cp_2, cmdline, strlen(cmdline) + 1);
 
   /* Allocate and activate page directory. */
   t->pagedir = pagedir_create ();
   if (t->pagedir == NULL)
     goto done;
   process_activate ();
-
-  /* obtain executable file name */
-  cmdline_cp = (char *) malloc(strlen(cmdline) + 1);
-  strlcpy(cmdline_cp, cmdline, strlen(cmdline) + 1);
-  file_name = strtok_r(cmdline_cp, " ", &file_name_ptr);
 
   /* Open executable file. */
   file = filesys_open (file_name);
@@ -272,8 +277,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
       || ehdr.e_phnum > 1024)
     {
       printf ("load: %s: error loading executable\n", file_name);
-      free(cmdline_cp);
-      goto done;
+      goto done; 
     }
 
   /* Read program headers. */
@@ -336,7 +340,7 @@ load (const char *cmdline, void (**eip) (void), void **esp)
     }
 
   /* Set up stack. */
-  if (!setup_stack (esp, cmdline)) {
+  if (!setup_stack (esp, cmdline_cp_2)) {
     goto done;
   }
   /* Start address. */
@@ -347,6 +351,8 @@ load (const char *cmdline, void (**eip) (void), void **esp)
  done:
   /* We arrive here whether the load is successful or not. */
   file_close (file);
+  free(cmdline_cp);
+  free(cmdline_cp_2);
   return success;
 }
 
@@ -538,7 +544,7 @@ setup_stack (void **esp, char *bufptr)
   free(argv);
   free(cmdline_cp);
 
-  hex_dump(*esp, *esp , PHYS_BASE - *esp, true);
+  hex_dump((uintptr_t)*esp, *esp , PHYS_BASE - *esp, true);
 
   return success;
 }
