@@ -149,14 +149,14 @@ syscall_handler (struct intr_frame *f)
       if(is_valid_ptr((const void*)(esp+1)) && is_valid_ptr( (const void*) (esp+2)) && is_valid_ptr((const void*)(esp+3)))
       {
         printf("WRITE: size = %d\n", *(esp+3));
-        if(is_valid_ptr((const void*)(*(esp+2))) && is_valid_ptr((const void*)(*(esp+2+*(esp+3)-1))))
+        if(is_valid_ptr((const void*)(*(esp+2))) && is_valid_ptr((const void*)(*(*(esp+2)+*(esp+3)-1))))
           f->eax = (uint32_t) sys_write((int) *(esp+1), (const void*) *(esp+2), (unsigned) *(esp+3));
         else{
           if(!is_valid_ptr((const void*)(*(esp+2)))){
             printf("WRITE: *(esp+2) invalid \n");
           }
-          if(!is_valid_ptr((const void*)(*(esp+2+*(esp+3)-1)))){
-            printf("WRITE: (*(esp+2+*(esp+3)-1)) invalid \n");
+          if(!is_valid_ptr((const void*)((*(esp+2)+*(esp+3)-1)))){
+            printf("WRITE: *(*(esp+2)+*(esp+3)-1) invalid \n");
           }
           printf("WRITE: Pointer found as invalid 2\n");
           sys_exit(-1);
@@ -212,6 +212,11 @@ bool is_valid_ptr(const void *user_ptr)
   if(user_ptr != NULL && is_user_vaddr (user_ptr))
   {
     return (pagedir_get_page(curr->pagedir, user_ptr)) != NULL;
+  }
+  if(user_ptr == NULL){
+    printf("Pointer is NULL\n");
+  }else{
+    printf("Pointer is not user address space\n");
   }
   return false;
 }
