@@ -88,7 +88,7 @@ syscall_handler (struct intr_frame *f)
 
   case SYS_EXIT: // 1
     {
-      int exitcode;
+      //int exitcode;
       //memread_user(f->esp + 4, &exitcode, sizeof(exitcode));
       is_valid_ptr(f->esp+1);
       //sys_exit(f->esp+1);
@@ -145,7 +145,7 @@ syscall_handler (struct intr_frame *f)
       if(is_valid_ptr((const void*)(esp+1) && is_valid_ptr((const void*)(esp+2) && is_valid_ptr((const void*)(esp+3)))))
       {
         if(is_valid_ptr((const void*)(*(esp+2)) && is_valid_ptr((const void*)(*(esp+2+(*esp+3)-1)))))
-          f->eax = (uint32_t) sys_write((int) *(esp+1), (const void*) (esp+2), (unsigned) *(esp+3));
+          f->eax = (uint32_t) sys_write((int) *(esp+1), (const void*) *(esp+2), (unsigned) *(esp+3));
         else{
           exit(-1);
         }
