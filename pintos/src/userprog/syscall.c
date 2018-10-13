@@ -75,7 +75,8 @@ syscall_handler (struct intr_frame *f)
   //thread_current()->current_esp = f->esp;
   esp = f->esp;
   printf("SYSCALL: esp is %d\n", *esp);
-  if(is_valid_ptr(esp)){
+  if(!is_valid_ptr(esp)){
+    printf("SYSCALL: esp invalid pointer\n");
     sys_exit(-1);
   }
   // Dispatch w.r.t system call number
