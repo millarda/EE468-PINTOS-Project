@@ -27,7 +27,7 @@ void sys_exit (int);
 static void check_user (const uint8_t *uaddr);
 static int32_t get_user (const uint8_t *uaddr);
 bool is_valid_ptr(const void *user_ptr);
-void sys_halt();
+//void sys_halt();
 
 static int memread_user (void *src, void *dst, size_t bytes);
 enum fd_search_filter { FD_FILE = 1, FD_DIRECTORY = 2 };
@@ -81,7 +81,7 @@ syscall_handler (struct intr_frame *f)
   switch (*esp) {
   case SYS_HALT: // 0
     {
-      sys_halt();
+      // sys_halt();
       NOT_REACHED();
       break;
     }
@@ -165,9 +165,9 @@ syscall_handler (struct intr_frame *f)
   }
 }
 
-void sys_halt() {
-  shutdown_power_off();
-}
+// void sys_halt() {
+//   shutdown_power_off();
+// }
 
 void sys_exit(int status) {
   printf("%s: exit(%d)\n", thread_current()->name, status);
