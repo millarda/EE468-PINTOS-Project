@@ -211,7 +211,7 @@ bool is_valid_ptr(const void *user_ptr)
   struct thread *curr = thread_current();
   if(user_ptr != NULL && is_user_vaddr (user_ptr))
   {
-    return (pagedir_get_page(curr->pagedir, user_ptr)) != NULL;
+    return (pagedir_get_page(curr->pagedir, user_ptr)) != NULL;//TODO FIX THIS
   }
   if(user_ptr == NULL){
     printf("Pointer is NULL\n");
