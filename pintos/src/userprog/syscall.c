@@ -63,6 +63,7 @@ static void
 syscall_handler (struct intr_frame *f)
 {
   uint32_t *esp;
+
   //int syscall_number;
   //ASSERT( sizeof(syscall_number) == 4 ); // assuming x86
 
@@ -142,14 +143,17 @@ syscall_handler (struct intr_frame *f)
     }
   case SYS_WRITE:
     {
+      printf("WRITE: starting syswrite with esp = %d\n", *esp);
       if(is_valid_ptr((const void*)(esp+1)) && is_valid_ptr( (const void*) (esp+2)) && is_valid_ptr((const void*)(esp+3)))
       {
         if(is_valid_ptr((const void*)(*(esp+2))) && is_valid_ptr((const void*)(*(esp+2+(*esp+3)-1))))
           f->eax = (uint32_t) sys_write((int) *(esp+1), (const void*) *(esp+2), (unsigned) *(esp+3));
         else{
+          printf("WRITE: Pointer found as invalid 1\n");
           sys_exit(-1);
         }
       }else{
+        printf("WRITE: Pointer found as invalid 2\n");
         sys_exit(-1);
       }
       break;
@@ -171,7 +175,7 @@ syscall_handler (struct intr_frame *f)
 
 void sys_exit(int status) {
   printf("%s: exit(%d)\n", thread_current()->name, status);
-  
+
   // The process exits.
   // wake up the parent process (if it was sleeping) using semaphore,
   // and pass the return code.
@@ -204,6 +208,7 @@ bool is_valid_ptr(const void *user_ptr)
 }
 
 int sys_write(int fd, const void *buffer, unsigned size) {
+  printf("WRITE: fd = %d, size = %d\n", fd, size);
   struct file_descriptor *fd_struct;
   int bytes_written = 0;
 
