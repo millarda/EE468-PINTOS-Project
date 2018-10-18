@@ -103,11 +103,11 @@ syscall_handler (struct intr_frame *f)
     }
     case SYS_CREATE:
     {
-      is_valid_ptr(esp+5);
-      is_valid_ptr(*(esp+4));
-      lock_acquire();
-      f->eax = filesys_create(*(esp+4), *(esp+5))
-      lock_release();
+      // is_valid_ptr(esp+5);
+      // is_valid_ptr(*(esp+4));
+      // lock_acquire();
+      // f->eax = filesys_create(*(esp+4), *(esp+5))
+      // lock_release();
       break;
     }
   case SYS_REMOVE:
