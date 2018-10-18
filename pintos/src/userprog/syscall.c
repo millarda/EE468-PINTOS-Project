@@ -89,12 +89,17 @@ syscall_handler (struct intr_frame *f)
     {
       //printf("SYSCALL: SYS_EXIT \n");
       //is_valid_ptr(esp+1);
-      sys_exit(*(esp+1));
+      sys_exit(esp+1);
       break;
     }
   case SYS_WAIT:
     {
-      while(1); //TODO
+      if(is_valid_ptr(esp+1)){//Make sure this check is appropriate
+        f->eax = process_wait(*(esp + 1));//
+      }else{
+        sys_exit(-1);
+      }
+      break;
     }
     case SYS_CREATE:
     {
@@ -255,9 +260,9 @@ bool is_valid_ptr(const void *user_ptr)
     return (pagedir_get_page(curr->pagedir, user_ptr)) != NULL;
   }
   if(user_ptr == NULL){
-    //printf("Pointer is NULL\n");
+    printf("Pointer is NULL\n");
   }else{
-    //printf("Pointer is not user address space\n");
+    printf("Pointer is not user address space\n");
   }
   return false;
 }
