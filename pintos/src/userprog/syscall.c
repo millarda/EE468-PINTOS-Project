@@ -90,7 +90,7 @@ syscall_handler (struct intr_frame *f)
     }
   case SYS_WAIT:
     {
-      if(is_valid_ptr(esp+1)){//Make sure this check is appropriate
+      if(is_valid_ptr((const void*) (esp+1))){//Make sure this check is appropriate
         f->eax = process_wait(*(esp + 1));//
       }else{
         sys_exit(-1);
@@ -99,13 +99,13 @@ syscall_handler (struct intr_frame *f)
     }
     case SYS_CREATE:
     {
-      if(!is_valid_ptr(esp+5))
+      if(!is_valid_ptr((const void*) (esp+5)))
         sys_exit(-1);
 
-      if(!is_valid_ptr(esp+4))
+      if(!is_valid_ptr((const void*) (esp+4)))
         sys_exit(-1);
 
-      if(!is_valid_ptr(*(esp+4)))
+      if(!is_valid_ptr((const void*) *(esp+4)))
         sys_exit(-1);
 
       lock_acquire(&filesys_lock);
@@ -116,10 +116,10 @@ syscall_handler (struct intr_frame *f)
     }
   case SYS_REMOVE:
     {
-      if(!is_valid_ptr(esp+4))
+      if(!is_valid_ptr((const void*) (esp+4)))
         sys_exit(-1);
 
-      if(!is_valid_ptr(*(esp+4)))
+      if(!is_valid_ptr((const void*) *(esp+4)))
         sys_exit(-1);
 
       lock_acquire(&filesys_lock);
