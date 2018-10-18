@@ -152,7 +152,7 @@ process_wait (tid_t child_tid)//won't work until exit syscall is made
         break;//finish while loop so child is not overwritten
       }
       elem = list_prev(elem);//since our child was not found, move onto next child
-    }while(elem != list_head(cur->children));//condition for ensuring a null value is not checked
+    }while(elem != list_head(&cur->children));//condition for ensuring a null value is not checked
 
     if(child_found == 0){//repeat loop for head if child still not found
       child = list_entry(elem, struct child_status, elem_child_status);
@@ -168,7 +168,7 @@ process_wait (tid_t child_tid)//won't work until exit syscall is made
     }else{//code for waiting
         lock_acquire(&cur->child_lock);//acquire lock since editing child
         while(thread_get_by_id(child_tid) != NULL){//loop when child is alive
-          cond_wait(&cur->cond_child, &cur->child_lock);//release lock, reaquire when signaled by child
+          cond_wait(&cur->child_condition, &cur->child_lock);//release lock, reaquire when signaled by child
         }
         //if child hasn't called its exit or has been waited by the same process then return -1
         if(!child->exited || child->has_been_waited){
