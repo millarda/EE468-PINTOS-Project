@@ -34,7 +34,6 @@ struct lock filesys_lock;
 
 bool is_valid_ptr(const void *user_ptr);
 
-//enum fd_search_filter { FD_FILE = 1, FD_DIRECTORY = 2 };
 struct file_descriptor * retrieve_file(int fd);
 
 struct file_descriptor{
@@ -43,9 +42,6 @@ struct file_descriptor{
   struct file *file_struct;
   struct list_elem elem;
 };
-
-// struct list open_files;
-struct lock filesys_lock;
 
 void
 syscall_init (void)
@@ -89,41 +85,46 @@ syscall_handler (struct intr_frame *f)
     {
       //printf("SYSCALL: SYS_EXIT \n");
       //is_valid_ptr(esp+1);
-      sys_exit(*(esp+1));
+      sys_exit(esp+1);
       break;
     }
   case SYS_WAIT:
     {
-      while(1); //TODO
+      if(is_valid_ptr((const void*) (esp+1))){//Make sure this check is appropriate
+        f->eax = process_wait(*(esp + 1));//
+      }else{
+        sys_exit(-1);
+      }
+      break;
     }
     case SYS_CREATE:
     {
-      is_valid_ptr(esp+5);
-      is_valid_ptr(*(esp+4));
-      lock_acquire();
-      f->eax = filesys_create(*(esp+4), *(esp+5))
-      lock_release();
+      if(!is_valid_ptr((const void*) (esp+5)))
+        sys_exit(-1);
+
+      if(!is_valid_ptr((const void*) (esp+4)))
+        sys_exit(-1);
+
+      if(!is_valid_ptr((const void*) *(esp+4)))
+        sys_exit(-1);
+
+      lock_acquire(&filesys_lock);
+      f->eax = filesys_create(*(esp+4), *(esp+5));
+      lock_release(&filesys_lock);
+
       break;
     }
   case SYS_REMOVE:
     {
-      // TODO
-      // const char* filename;
-      // bool ret;
-      //
-      // lock_acquire (&filesys_lock);
-      // ret = filesys_remove(filename);
-      // lock_release (&filesys_lock);
-      //
-      // f->eax = ret;
-      is_valid_ptr(esp+1);
-      is_valid_ptr(*(esp+1));
-      lock_acquire();
-      if(filesys_remove(*esp+1)) == NULL)
-        f->eax = false;
-        else
-        f->eax = true;
-        lock_release();
+      if(!is_valid_ptr((const void*) (esp+4)))
+        sys_exit(-1);
+
+      if(!is_valid_ptr((const void*) *(esp+4)))
+        sys_exit(-1);
+
+      lock_acquire(&filesys_lock);
+      f->eax = filesys_remove(*(esp+1));
+      lock_release(&filesys_lock);
       break;
     }
   case SYS_WRITE:
@@ -255,9 +256,9 @@ bool is_valid_ptr(const void *user_ptr)
     return (pagedir_get_page(curr->pagedir, user_ptr)) != NULL;
   }
   if(user_ptr == NULL){
-    //printf("Pointer is NULL\n");
+    printf("Pointer is NULL\n");
   }else{
-    //printf("Pointer is not user address space\n");
+    printf("Pointer is not user address space\n");
   }
   return false;
 }
